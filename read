@@ -1,0 +1,64 @@
+Aquí tienes todo el documento completo en un solo bloque, desde el principio hasta el final. Copia todo lo que está dentro de este recuadro y pégalo directamente en tu archivo de GitHub:
+
+Markdown
+# Solución: Error 1962 en Lenovo M72e (Ubuntu Server)
+
+Este documento detalla la solución al error "1962: No operating system found" que ocurre frecuentemente en equipos Lenovo antiguos al instalar distribuciones modernas de Linux que intentan utilizar tablas de particiones GPT y modo UEFI en hardware diseñado para BIOS Legacy/MBR.
+
+## 1. El Problema
+Al finalizar la instalación, la BIOS de la Lenovo M72e no reconoce el sector de arranque debido a una incompatibilidad entre la tabla de particiones GPT generada automáticamente por el instalador y el modo de arranque de la placa base (Legacy BIOS).
+
+## 2. La Solución: Conversión a MBR y Reinstalación de GRUB
+
+Para solucionar esto, es necesario convertir el disco a formato MBR (Legacy) y reinstalar GRUB en modo `i386-pc`.
+
+### Paso A: Conversión de GPT a MBR
+Si el disco está en formato GPT, debemos convertirlo:
+
+```bash
+# Ejecutar gdisk sobre el disco principal
+sudo gdisk /dev/sda
+Dentro de gdisk, sigue estos pasos:
+
+Presiona r (recovery/transformation mode).
+
+Presiona g (convertir GPT a MBR).
+
+Presiona w (escribir cambios).
+
+Confirma con y.
+
+Paso B: Montaje del Sistema (Chroot)
+Monta tu partición raíz (ejemplo: /dev/sda2) para trabajar dentro del sistema instalado:
+
+Bash
+sudo mount /dev/sda2 /mnt
+sudo mount --bind /dev /mnt/dev
+sudo mount --bind /proc /mnt/proc
+sudo mount --bind /sys /mnt/sys
+sudo chroot /mnt
+Paso C: Reinstalación de GRUB en Modo Legacy
+Forzamos la instalación del cargador de arranque en el sector MBR:
+
+Bash
+# Instalar GRUB para plataforma legacy
+grub-install /dev/sda
+
+# Actualizar configuración
+update-grub
+Paso D: Finalización
+Sal del entorno chroot y reinicia:
+
+Bash
+exit
+sudo reboot
+3. Configuración de BIOS Requerida
+Para que este proceso sea exitoso, asegúrate de que la BIOS tenga los siguientes parámetros:
+
+CSM (Compatibility Support Module): Enabled.
+
+Boot Mode: Legacy Only (o Legacy First).
+
+Secure Boot: Disabled.
+
+Documentación creada como referencia técnica para la resolución del error de arranque 1962.
